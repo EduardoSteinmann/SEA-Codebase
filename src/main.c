@@ -17,7 +17,7 @@ int main()
 
     printf("Successfully allocated\n");
 
-    SEA_Result(SEA_VoidPtr) result = SEA_LinearAllocator_alloc(linear_allocator, 4);
+    SEA_Result(SEA_VoidPtr) result = SEA_LinearAllocator_alloc_resize_allocator_if_needed(linear_allocator, 4);
 
     if (result.err.error_code != 0)
     {

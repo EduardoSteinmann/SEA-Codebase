@@ -1,5 +1,6 @@
 #ifndef SEA_STR
 #define SEA_STR
+#include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -93,14 +94,12 @@ SEA_Result(SEA_VoidPtr) SEA_malloc(size_t size_of_memory_block)
 
 SEA_Result(SEA_VoidPtr) SEA_realloc(SEA_VoidPtr ptr, size_t size_of_memory_block)
 {
-    SEA_VoidPtr backup = ptr;
     ptr = realloc(ptr, size_of_memory_block);
     SEA_Result(SEA_VoidPtr) result = { .value = ptr, .err = { .error_code = 0, .error_message = NULL } };
     if (!ptr)
     {
         SEA_Error_new_from_static_string_literal(realloc_failed_err, -1, "Realloc returned null: re-allocation failed, old memory block freed.", realloc_failed_message);
         result.err = realloc_failed_err;
-        free(backup);
     }
     return result;
 }
@@ -139,6 +138,9 @@ SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_new(size_t size_of_memory_block)
         free(linear_allocator);
         return result;
     }
+
+    linear_allocator->current_allocation_position = 0;
+    linear_allocator->capacity = size_of_memory_block;
 
     return result;
 }
@@ -187,11 +189,12 @@ SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc_resize_allocator_if_needed(SEA
             result.err = realloc_failed_err;
             return result;
         }
+        allocator->capacity = new_allocation_position * 2;
     }
+    
+    result.value = allocator->memory + allocator->current_allocation_position;
 
     allocator->current_allocation_position = new_allocation_position;
-
-    result.value = allocator->memory + new_allocation_position;
 
     return result;
 }
