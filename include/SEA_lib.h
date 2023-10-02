@@ -152,7 +152,7 @@ SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc(SEA_LinearAllocator* allocator
 {
     SEA_Result(SEA_VoidPtr) result = { .value = NULL, .err = { .error_code = 0, .error_message = NULL } };
 
-    const size_t new_allocation_position = allocator->current_allocation_position + size_of_memory_block;
+    size_t new_allocation_position = allocator->current_allocation_position + size_of_memory_block;
 
     new_allocation_position += (new_allocation_position % sizeof(void*));
 
@@ -173,7 +173,7 @@ SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc_resize_allocator_if_needed(SEA
 {
     SEA_Result(SEA_VoidPtr) result = { .value = NULL, .err = { .error_code = 0, .error_message = NULL } };
 
-    const size_t new_allocation_position = allocator->current_allocation_position + size_of_memory_block;
+    size_t new_allocation_position = allocator->current_allocation_position + size_of_memory_block;
 
     new_allocation_position += (new_allocation_position % sizeof(void*));
 

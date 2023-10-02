@@ -5,7 +5,7 @@
 
 int main()
 {
-    SEA_Result(SEA_VoidPtr) allocator_result = SEA_LinearAllocator_new(50);
+    SEA_Result(SEA_VoidPtr) allocator_result = SEA_LinearAllocator_new(2);
 
     if (allocator_result.err.error_code != 0)
     {
@@ -15,9 +15,16 @@ int main()
 
     SEA_LinearAllocator* linear_allocator = (SEA_LinearAllocator*) allocator_result.value;
 
-    printf("Successfully allocated");
+    printf("Successfully allocated\n");
 
-    SEA_LinearAllocator_free(linear_allocator);
+    SEA_Result(SEA_VoidPtr) result = SEA_LinearAllocator_alloc(linear_allocator, 4);
+
+    if (result.err.error_code != 0)
+    {
+        SEA_Error_print(result.err);
+        SEA_LinearAllocator_free(linear_allocator);
+        return -1;
+    }
 
     return 0;
 }
