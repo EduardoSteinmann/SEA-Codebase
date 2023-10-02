@@ -45,8 +45,9 @@ SEA_Result_declr(SEA_VoidPtr);
 
 //Creates a new SEA_Error object from a string literal passed in, along with a name for a variable that references the literal
 //This MUST BE ON ITS OWN LINE because it creates a static unsigned char array to reference the literal
-#define SEA_Error_new_from_static_string_literal(error_object_name, err_code, string_literal, string_literal_reference_name) static unsigned char string_literal_reference_name[sizeof(string_literal)] = string_literal; \
-SEA_Error error_object_name = { err_code, (unsigned char*)string_literal_reference_name }
+#define SEA_Error_new_from_static_string_literal(error_object_name, err_code, string_literal, string_literal_reference_name) \
+    static unsigned char string_literal_reference_name[sizeof(string_literal)] = string_literal; \
+    SEA_Error error_object_name = { err_code, (unsigned char*)string_literal_reference_name }
 
 void SEA_Error_print(SEA_Error err);
 
