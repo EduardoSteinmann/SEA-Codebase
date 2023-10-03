@@ -18,6 +18,7 @@
     const type *const SEA_VEC_##type##_end(const SEA_VEC_##type *const restrict _v); \
     void SEA_VEC_##type##_append(SEA_VEC_##type *_dest, SEA_VEC_##type *_src); \
 
+
 //////////////////////////////////////////////////////////////////////
 //*                    SEA VEC implementaions                      *//
 #define SEA_VEC_impl(type) \
