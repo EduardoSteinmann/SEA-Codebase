@@ -20,7 +20,7 @@
 
 
 //////////////////////////////////////////////////////////////////////
-//*                    SEA VEC implementaions                      *//
+//*                    SEA VEC implementations                      *//
 #define SEA_VEC_impl(type) \
     SEA_VEC_##type get_SEA_VEC_##type() { \
         type *buffer = (type *) malloc(sizeof(type) * 2); \
