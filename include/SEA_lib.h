@@ -127,7 +127,6 @@ void SEA_LinearAllocator_reset(SEA_LinearAllocator* const allocator);
 //////////////////////////////////////////////////////////////////////
 //*              SEA_lib implementation starts here               *//
 
-#define SEA_LIB_IMPLEMENTATION
 #ifdef SEA_LIB_IMPLEMENTATION
 
 //////////////////////////////////////////////////////////////////////
