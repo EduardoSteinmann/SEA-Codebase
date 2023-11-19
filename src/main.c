@@ -3,26 +3,46 @@
 #define SEA_LIB_IMPLEMENTATION
 #include "SEA_lib.h"
 
+SEA_Result_declr(int);
+SEA_Vec_declr(int);
+
+SEA_Vec_impl(int);
+
+SEA_Result(int) do_stuff()
+{
+    SEA_Result(SEA_LinearAllocator) result = SEA_LinearAllocator_new(5);
+    SEA_LinearAllocator allocator2 = SEA_try(int, result);
+    SEA_LinearAllocator allocator = (SEA_LinearAllocator) { 0 };
+    SEA_try_func(allocator, int, SEA_LinearAllocator_new(5));
+    SEA_LinearAllocator_free(&allocator2);
+    SEA_LinearAllocator_free(&allocator);
+}
+
 int main()
 {
-    SEA_Result(SEA_VoidPtr) allocator_result = SEA_LinearAllocator_new(2);
+    SEA_Result(SEA_LinearAllocator) allocator_result = SEA_LinearAllocator_new(2);
 
-    if (allocator_result.err.error_code != 0)
+    if (allocator_result.err != NULL)
     {
-        SEA_Error_print(allocator_result.err);
+        SEA_ErrRef_print(allocator_result.err);
         return -1;
     }
 
-    SEA_LinearAllocator* linear_allocator = (SEA_LinearAllocator*) allocator_result.value;
+    SEA_LinearAllocator linear_allocator = allocator_result.value;
 
     printf("Successfully allocated\n");
 
-    SEA_Result(SEA_VoidPtr) result = SEA_LinearAllocator_alloc_resize_allocator_if_needed(linear_allocator, 4);
+    SEA_Result(SEA_VoidPtr) result = SEA_LinearAllocator_alloc_resize_if_needed(&linear_allocator, 4);
 
-    if (result.err.error_code != 0)
+    SEA_defer(FILE* f = fopen("my_file", "w"), fclose(f))
     {
-        SEA_Error_print(result.err);
-        SEA_LinearAllocator_free(linear_allocator);
+        
+    }
+
+    if (result.err != NULL)
+    {
+        SEA_ErrRef_print(result.err);
+        SEA_LinearAllocator_free(&linear_allocator);
         return -1;
     }
 
