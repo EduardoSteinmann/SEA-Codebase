@@ -5,7 +5,6 @@
 
 SEA_Result_declr(int);
 SEA_Vec_declr(int);
-
 SEA_Vec_impl(int);
 
 SEA_Result(int) do_stuff()
@@ -13,9 +12,13 @@ SEA_Result(int) do_stuff()
     SEA_Result(SEA_LinearAllocator) result = SEA_LinearAllocator_new(5);
     SEA_LinearAllocator allocator2 = SEA_try(int, result);
     SEA_LinearAllocator allocator = (SEA_LinearAllocator) { 0 };
+    SEA_Result(SEA_Vec(int)) vec_result = SEA_Vec_new(int, &allocator);
+    SEA_Vec(int) vec = SEA_try(int, vec_result);
+    SEA_Vec_push_back(int, &vec, 4);
     SEA_try_func(allocator, int, SEA_LinearAllocator_new(5));
     SEA_LinearAllocator_free(&allocator2);
     SEA_LinearAllocator_free(&allocator);
+    SEA_Vec_free(int, &vec);
 }
 
 int main()

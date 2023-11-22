@@ -57,7 +57,7 @@ SEA_Result_declr(SEA_LinearAllocator);
 #define SEA_Vec(type) __SEA_token_concat(SEA_Vec, type)
 
 #define SEA_Vec_declr(type) \
-    typedef struct SEA_Vec(type) \
+    typedef struct SEA_Vec(type)\
     { \
         size_t len; \
         size_t capacity; \
@@ -65,15 +65,134 @@ SEA_Result_declr(SEA_LinearAllocator);
         SEA_LinearAllocator* allocator; \
     } SEA_Vec(type); \
     SEA_Result_declr(SEA_Vec(type)); \
-    SEA_Result(SEA_Vec(type)) SEA_Vec##type##_new(SEA_LinearAllocator* const allocator); \
-    SEA_Result(type) SEA_Vec##type##_at(const SEA_Vec(type)* const restrict SEA_vec, const size_t idx); \
-    SEA_ErrRef SEA_Vec##type##_push_back(SEA_Vec(type)* const restrict SEA_vec, type elem); \
-    SEA_ErrRef SEA_Vec##type##_pop_back(SEA_Vec(type)* const restrict SEA_vec); \
-    const size_t SEA_Vec##type##_size(const SEA_Vec(type)* const restrict SEA_vec); \
-    const type* const SEA_Vec##type##_begin(const SEA_Vec(type)* const restrict SEA_vec); \
-    const type* const SEA_Vec##type##_end(const SEA_Vec(type)* const restrict SEA_vec); \
-    SEA_ErrRef SEA_Vec##type##_extend(SEA_Vec(type)* dest, SEA_Vec(type)* src); \
-    void SEA_Vec##type##_free(SEA_Vec(type)* const restrict SEA_vec); \
+    SEA_Result(SEA_Vec(type)) __SEA_token_concat(SEA_Vec(type), _new) (SEA_LinearAllocator* const allocator); \
+    SEA_ErrRef __SEA_token_concat(SEA_Vec(type), _push_back) (SEA_Vec(type)* const SEA_vec, type elm); \
+    SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* SEA_vec); \
+    SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _at) (const SEA_Vec(type)* SEA_vec , size_t idx); \
+    size_t __SEA_token_concat(SEA_Vec(type), _len) (const SEA_Vec(type)* const SEA_vec); \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_begin) (const SEA_Vec(type)* const SEA_vec); \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_end) (const SEA_Vec(type)* const SEA_vec); \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_incr) (type* iter); \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_decr) (type* iter); \
+    SEA_Result(SEA_VoidPtr) __SEA_token_concat(SEA_Vec(type), _extend) (SEA_Vec(type)* const dest, SEA_Vec(type)* const src); \
+    void __SEA_token_concat(SEA_Vec(type), _free) (SEA_Vec(type)* const SEA_vec); \
+
+#define SEA_Vec_new(type, allocator) __SEA_token_concat(SEA_Vec(type), _new)(allocator)
+#define SEA_Vec_push_back(type, vec, elem) __SEA_token_concat(SEA_Vec(type), _push_back)(vec, elem)
+#define SEA_Vec_pop_back(type, vec) __SEA_token_concat(SEA_Vec(type), _pop_back)(vec)
+#define SEA_Vec_at(type, vec, idx) __SEA_token_concat(SEA_Vec(type), _at)(vec, idx)
+#define SEA_Vec_len(type, vec) __SEA_token_concat(SEA_Vec(type), _len)(vec)
+#define SEA_Vec_iter_begin(type, vec) __SEA_token_concat(SEA_Vec(type), _iter_begin)(vec)
+#define SEA_Vec_iter_end(type, vec) __SEA_token_concat(SEA_Vec(type), _iter_end)(vec)
+#define SEA_Vec_iter_incr(type, iter) __SEA_token_concat(SEA_Vec(type), _iter_incr)(iter)
+#define SEA_Vec_iter_decr(type, iter) __SEA_token_concat(SEA_Vec(type), _iter_decr)(iter)
+#define SEA_Vec_extend(type, dest_vec, src_vec) __SEA_token_concat(SEA_Vec(type), _extend)(dest_vec, src_vec)
+#define SEA_Vec_free(type, vec) __SEA_token_concat(SEA_Vec(type), _free)(vec)
+
+#define SEA_Vec_impl(type) \
+    SEA_Result(SEA_Vec(type)) __SEA_token_concat(SEA_Vec(type), _new) (SEA_LinearAllocator* const allocator) \
+    { \
+        SEA_Result(SEA_Vec(type)) result = (SEA_Result(SEA_Vec(type))){ 0 }; \
+        result.value.allocator = allocator;\
+        SEA_Result(SEA_VoidPtr) alloc_result = allocator ? SEA_LinearAllocator_alloc_resize_if_needed(allocator, 2 * sizeof(type)) \
+        : SEA_malloc(2 * sizeof(type)); \
+        if (alloc_result.err != NULL) \
+        { \
+            result.err = alloc_result.err; \
+            return result; \
+        } \
+        SEA_VoidPtr arr = alloc_result.value; \
+        result.value = (SEA_Vec(type)){ .len = 0, .capacity = 2, .arr = arr }; \
+        return result; \
+    } \
+    SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _at) (const SEA_Vec(type)* const SEA_vec, const size_t idx) \
+    { \
+        SEA_Result(type) result = { .value = (type){ 0 }, .err = NULL }; \
+        if (idx >= SEA_vec->len) \
+        { \
+            result.err = SEA_ErrRef_new(-1, "Accesed SEA_Vec out of bounds."); \
+            return result; \
+        } \
+        result.value = SEA_vec->arr[idx]; \
+        return result; \
+    } \
+    SEA_ErrRef __SEA_token_concat(SEA_Vec(type), _push_back)(SEA_Vec(type)* const SEA_vec, type elm) \
+    { \
+        if (SEA_vec->len + 1 > SEA_vec->capacity) \
+        { \
+            SEA_vec->capacity *= 2; \
+            SEA_Result(SEA_VoidPtr) realloc_result = SEA_vec->allocator ? SEA_LinearAllocator_alloc_resize_if_needed(SEA_vec->allocator, sizeof(type) * SEA_vec->capacity) \
+            : SEA_realloc(SEA_vec->arr, sizeof(type) * SEA_vec->capacity); \
+            if (realloc_result.err != NULL) \
+            { \
+                return realloc_result.err; \
+            } \
+            SEA_vec->arr = (type*) realloc_result.value; \
+        } \
+        SEA_vec->arr[SEA_vec->len] = elm; \
+        SEA_vec->len++; \
+        return NULL; \
+    } \
+    SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* const SEA_vec) \
+    { \
+        SEA_Result(type) result = { .value = (type){ 0 }, .err = NULL }; \
+        if (SEA_vec->len <= 0) \
+        { \
+            result.err = SEA_ErrRef_new(-1, "Cannot pop back from a vector of size 0."); \
+            return result; \
+        } \
+        SEA_vec->len--; \
+        result.value = SEA_vec->arr[SEA_vec->len]; \
+        return result; \
+    } \
+    const size_t __SEA_token_concat(SEA_Vec(type), _len) (const SEA_Vec(type)* const SEA_vec) \
+    { \
+        return SEA_vec->len; \
+    } \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_begin) (const SEA_Vec(type)* const SEA_vec) \
+    { \
+        return SEA_vec->arr; \
+    } \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_end) (const SEA_Vec(type)* const SEA_vec) \
+    { \
+        return SEA_vec->arr + SEA_vec->len; \
+    } \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_incr) (type* iter) \
+    { \
+        return ++iter; \
+    } \
+    type* __SEA_token_concat(SEA_Vec(type), _iter_decr) (type* iter) \
+    { \
+        return --iter; \
+    } \
+    SEA_Result(SEA_VoidPtr) __SEA_token_concat(SEA_Vec(type), _extend) (SEA_Vec(type)* dest, SEA_Vec(type)* src) \
+    { \
+        SEA_Result(SEA_VoidPtr) result = { .value = dest, .err = nullptr }; \
+        if (dest->capacity < dest->len + src->len) \
+        { \
+            SEA_Result(SEA_VoidPtr) realloc_result = SEA_realloc(dest->arr , (dest->len + src->len) * sizeof(type)); \
+            if (realloc_result.err != NULL) \
+            { \
+                result.err = realloc_result.err; \
+                return result; \
+            } \
+            dest->arr = (type*) realloc_result.value; \
+            dest->capacity = dest->len + src->len; \
+        } \
+        memcpy(dest->arr + dest->len, src->arr, src->len * sizeof(type)); \
+        dest->len += src->len; \
+        return result; \
+    } \
+    void __SEA_token_concat(SEA_Vec(type), _free)(SEA_Vec(type)* const SEA_vec) \
+    { \
+        SEA_vec->len = 0; \
+        SEA_vec->capacity = 0; \
+        if (!SEA_vec->allocator) \
+        { \
+            free(SEA_vec->arr); \
+        } \
+        SEA_vec->arr = nullptr; \
+    } \
 
 //////////////////////////////////////////////////////////////////////
 //*              SEA_Error functions and macros                    *//
@@ -197,6 +316,9 @@ SEA_Result(SEA_LinearAllocator) SEA_LinearAllocator_new(size_t size_of_memory_bl
 void SEA_LinearAllocator_free (SEA_LinearAllocator* const allocator)
 {
     free(allocator->memory);
+    allocator->memory = NULL;
+    allocator->len = 0;
+    allocator->capacity = 0;
 }
 
 SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc(SEA_LinearAllocator* const allocator, size_t size_of_memory_block)
@@ -249,105 +371,6 @@ void SEA_LinearAllocator_reset(SEA_LinearAllocator* const allocator)
 {
     allocator->len = 0;
 }
-
-//////////////////////////////////////////////////////////////////////
-//*              SEA_Vec implementation starts here               *//
-
-#define SEA_Vec_impl(type) \
-    SEA_Result(SEA_Vec(type)) SEA_Vec##type##_new(SEA_LinearAllocator* const allocator) \
-    { \
-        SEA_Result(SEA_Vec(type)) result = { 0 }; \
-        SEA_Result(SEA_VoidPtr) malloc_result = SEA_malloc(sizeof(type) * 2); \
-        if (malloc_result.err != NULL) \
-        { \
-            result.err = malloc_result.err; \
-            return result; \
-        } \
-        SEA_VoidPtr arr = malloc_result.value; \
-        result.value = (SEA_Vec(type)){ .len = 0, .capacity = 2, .arr = arr }; \
-        return result; \
-    } \
-    SEA_Result(type) SEA_Vec##type##_at(const SEA_Vec(type)* const restrict SEA_vec, const size_t idx) \
-    { \
-        SEA_Result(type) result = { .value = (type){ 0 }, .err = NULL }; \
-        if (idx >= SEA_vec->len) \
-        { \
-            result.err = SEA_ErrRef_new(-1, "Accesed SEA_Vec out of bounds."); \
-            return result; \
-        } \
-        result.value = SEA_vec->arr[idx]; \
-        return result; \
-    } \
-    SEA_ErrRef SEA_Vec##type##_push_back(SEA_Vec(type)* const restrict SEA_vec, type elm) \
-    { \
-        if (SEA_vec->len + 1 > SEA_vec->capacity) \
-        { \
-            SEA_vec->capacity *= 2; \
-            SEA_Result(SEA_VoidPtr) realloc_result = { .value = NULL, .err = NULL }; \
-            if (SEA_vec->allocator) \
-            { \
-                realloc_result = SEA_LinearAllocator_alloc_resize_if_needed(SEA_vec->allocator, sizeof(type) * SEA_vec->capacity); \
-            } \
-            else \
-            { \
-                realloc_result = SEA_realloc(SEA_vec->arr, sizeof(type) * SEA_vec->capacity); \
-            } \
-            if (realloc_result.err != NULL) \
-            { \
-                return realloc_result.err; \
-            } \
-            SEA_vec->arr = (type*) realloc_result.value; \
-        } \
-        SEA_vec->arr[SEA_vec->len] = elm; \
-        SEA_vec->len++; \
-        return NULL; \
-    } \
-    SEA_ErrRef SEA_Vec##type##_pop_back(SEA_Vec(type)* const restrict SEA_vec) \
-    { \
-        if (SEA_vec->len <= 0) { return SEA_ErrRef_new(-1, "Cannot pop back from a vector of size 0."); } \
-        SEA_vec->len--; \
-        return NULL; \
-    } \
-    const size_t SEA_Vec##type##_size(const SEA_Vec(type)* const restrict SEA_vec) \
-    { \
-        return SEA_vec->len; \
-    } \
-    type* const SEA_Vec##type##_iter_begin(const SEA_Vec(type)* const restrict SEA_vec) \
-    { \
-        return SEA_vec->arr; \
-    } \
-    type* const SEA_Vec##type##_iter_end(const SEA_Vec(type)* const restrict SEA_vec) \
-    { \
-        return SEA_vec->arr + SEA_vec->len; \
-    } \
-    type* const SEA_Vec##type##_iter_incr(type* iter) \
-    { \
-        return ++iter; \
-    } \
-    type* const SEA_Vec##type##_iter_decr (type* iter) \
-    { \
-        return --iter; \
-    } \
-    SEA_ErrRef SEA_Vec##type##_extend(SEA_Vec(type)* dest, SEA_Vec(type)* src) \
-    { \
-        if (dest->capacity < dest->len + src->len) \
-        { \
-            SEA_Result(SEA_VoidPtr) realloc_result = SEA_realloc(dest->arr , (dest->len + src->len) * sizeof(type)); \
-            if (realloc_result.err != NULL) \
-            { \
-                return realloc_result.err; \
-            } \
-            dest->arr = (type*) realloc_result.value; \
-            dest->capacity = dest->len + src->len; \
-        } \
-        memcpy(dest->arr + dest->len, src->arr, src->len * sizeof(type)); \
-        dest->len += src->len; \
-        return NULL; \
-    } \
-    void SEA_Vec##type##_free(SEA_Vec(type)* const restrict SEA_vec) \
-    { \
-        free(SEA_vec->arr); \
-    } \
 
 #endif
 
