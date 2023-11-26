@@ -295,6 +295,7 @@ SEA_Result(SEA_VoidPtr) SEA_calloc(size_t num_of_objects, size_t size_of_one_obj
 //////////////////////////////////////////////////////////////////////
 //*         SEA_LinearAllocator implementation starts here              *//
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_LinearAllocator) SEA_LinearAllocator_new(size_t size_of_memory_block)
 {
     SEA_Result(SEA_LinearAllocator) result = { 0 };
