@@ -47,24 +47,40 @@ typedef const SEA_Error* SEA_ErrRef;
 
 typedef void* SEA_VoidPtr;
 
-//SEA_Result type declarations
+// SEA_Result type declarations
 SEA_Result_declr(SEA_VoidPtr);
 SEA_Result_declr(SEA_LinearAllocator);
+
+/////////////////////////////////////////////////////////////////////
+//*   SEA_UnsafeOption functions, macros, and type declarations   *//
+
+/// @note This is an Option struct that mutates underlying memory, but keeps the same size of the underlying type.
+// It should only be used when the user knows they do not need the extra space taken by one bit.
+// This struct DOES NOT work with floating point types or pointers. See 'SEA_Option' for safe version
+
+/// Declares a new SEA_UnsafeOption struct with the value field being of the type passed in.
+/// A SEA_UnsafeOption struct contains a Some field containing the actual value for the object ( @note this object has one bit less memory)
+/// and a None field declaring whether or not the value is None, being true for None, and false for Some (default)
+#define SEA_Option_declr(type) typedef struct __SEA_token_concat(SEA_UnsafeOption, type) { type Some: sizeof(T) * 8 - 1; bool None: 1; } __SEA_token_concat(SEA_UnsafeOption, type);
+
+// Stands in place for the SEA_UnsafeOption struct created from SEA_UnsafeOption_declr
+#define SEA_UnsafeOption(type) __SEA_token_concat(SEA_UnsafeOption, type)
 
 /////////////////////////////////////////////////////////////////////
 //*      SEA_Option functions, macros, and type declarations      *//
 
 // Declares a new SEA_Option struct with the value field being of the type passed in.
-// A SEA_Option struct contains a Some field containing the actual value for the object (note this object has one bit less memory)
-// and a None field declaring whether or not the value is None, being true for None, and false for Some (default)
-#define SEA_Option_declr(type) typedef struct __SEA_token_concat(Option, type) { type Some: sizeof(T) * 8 - 1; bool None: 1; } __SEA_token_concat(Option, type);
+// A SEA_Option struct contains a Some field containing the actual value for the object
+// and a None field declaring whether or not the value is None.
+#define SEA_Option_declr(type) typedef struct __attribute__((packed)) __SEA_token_concat(SEA_Option, type) { type Some; bool None; } __SEA_token_concat(SEA_Option, type);
 
 // Stands in place for the SEA_Option struct created from SEA_Option_declr
-#define SEA_Option(type) __SEA_token_concat(Option, type)
+#define SEA_Option(type) __SEA_token_concat(SEA_Option, type)
 
 /////////////////////////////////////////////////////////////////////
 //*       SEA_Vec typedef, macros, and function declarations      *//
 
+// Stands in place for the SEA_Vec struct created from SEA_Vec_declr
 #define SEA_Vec(type) __SEA_token_concat(SEA_Vec, type)
 
 #define SEA_Vec_declr(type) \
