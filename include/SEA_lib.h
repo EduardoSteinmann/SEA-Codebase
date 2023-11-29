@@ -78,7 +78,7 @@ SEA_Result_declr(SEA_LinearAllocator);
     SEA_Result_declr(SEA_Vec(type)); \
     [[nodiscard]] SEA_Result(SEA_Vec(type)) __SEA_token_concat(SEA_Vec(type), _new) (SEA_LinearAllocator* const allocator); \
     SEA_ErrRef __SEA_token_concat(SEA_Vec(type), _push_back) (SEA_Vec(type)* const SEA_vec, type elm); \
-    SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* SEA_vec); \
+    [[maybe_unused]] SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* SEA_vec); \
     SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _at) (const SEA_Vec(type)* SEA_vec , size_t idx); \
     size_t __SEA_token_concat(SEA_Vec(type), _len) (const SEA_Vec(type)* const SEA_vec); \
     type* __SEA_token_concat(SEA_Vec(type), _iter_begin) (const SEA_Vec(type)* const SEA_vec); \
@@ -144,7 +144,7 @@ SEA_Result_declr(SEA_LinearAllocator);
         SEA_vec->len++; \
         return NULL; \
     } \
-    SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* const SEA_vec) \
+    [[maybe_unused]] SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* const SEA_vec) \
     { \
         SEA_Result(type) result = { .value = (type){ 0 }, .err = NULL }; \
         if (SEA_vec->len <= 0) \
