@@ -61,7 +61,7 @@ SEA_Result_declr(SEA_LinearAllocator);
 /// Declares a new SEA_UnsafeOption struct with the value field being of the type passed in.
 /// A SEA_UnsafeOption struct contains a Some field containing the actual value for the object ( @note this object has one bit less memory)
 /// and a None field declaring whether or not the value is None, being true for None, and false for Some (default)
-#define SEA_Option_declr(type) typedef struct __SEA_token_concat(SEA_UnsafeOption, type) { type Some: sizeof(T) * 8 - 1; bool None: 1; } __SEA_token_concat(SEA_UnsafeOption, type);
+#define SEA_UnsafeOption_declr(type) typedef struct __SEA_token_concat(SEA_UnsafeOption, type) { type Some: sizeof(T) * 8 - 1; bool None: 1; } __SEA_token_concat(SEA_UnsafeOption, type);
 
 // Stands in place for the SEA_UnsafeOption struct created from SEA_UnsafeOption_declr
 #define SEA_UnsafeOption(type) __SEA_token_concat(SEA_UnsafeOption, type)
