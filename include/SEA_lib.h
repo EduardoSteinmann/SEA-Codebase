@@ -5,13 +5,13 @@
 #include <string.h>
 #include <inttypes.h>
 
-//////////////////////////////////////////////////////////////////////
-/*                 SEA Internal Macros and Functions               */
+/////////////////////////////////////////////////////////////////////
+//*                 SEA Internal Macros and Functions             *//
 #define __SEA_token_concat_direct(t1, t2) t1 ## t2
 #define __SEA_token_concat(t1, t2) __SEA_token_concat_direct(t1, t2)
 #define __SEA_macro_var(name) __SEA_token_concat(name, __LINE__)
 
-//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 //*                 SEA concrete struct declarations              *//
 
 typedef struct SEA_String
@@ -35,14 +35,14 @@ typedef struct SEA_Error
 
 typedef const SEA_Error* SEA_ErrRef;
 
-//////////////////////////////////////////////////////////////////////
-//*         SEA_Result functions, macros, and type declarations   *//
+/////////////////////////////////////////////////////////////////////
+//*      SEA_Result functions, macros, and type declarations      *//
 
-//Declares a new SEA_Result struct with the value field being of the type passed in. 
-//A SEA_Result struct contains a value field containing the actual value for the object or an err field for when an error occurs
+// Declares a new SEA_Result struct with the value field being of the type passed in. 
+// A SEA_Result struct contains a value field containing the actual value for the object or an err field for when an error occurs
 #define SEA_Result_declr(type) typedef struct __SEA_token_concat(SEA_Result, type) { type value; SEA_ErrRef err; } __SEA_token_concat(SEA_Result, type);
 
-//Stands in place for the SEA_Result struct type created from SEA_Result_declr
+// Stands in place for the SEA_Result struct type created from SEA_Result_declr
 #define SEA_Result(type) __SEA_token_concat(SEA_Result, type)
 
 typedef void* SEA_VoidPtr;
@@ -51,7 +51,18 @@ typedef void* SEA_VoidPtr;
 SEA_Result_declr(SEA_VoidPtr);
 SEA_Result_declr(SEA_LinearAllocator);
 
-//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+//*      SEA_Option functions, macros, and type declarations      *//
+
+// Declares a new SEA_Option struct with the value field being of the type passed in.
+// A SEA_Option struct contains a Some field containing the actual value for the object (note this object has one bit less memory)
+// and a None field declaring whether or not the value is None, being true for None, and false for Some (default)
+#define SEA_Option_declr(type) typedef struct __SEA_token_concat(Option, type) { type Some: sizeof(T) * 8 - 1; bool None: 1; } __SEA_token_concat(Option, type);
+
+// Stands in place for the SEA_Option struct created from SEA_Option_declr
+#define SEA_Option(type) __SEA_token_concat(Option, type)
+
+/////////////////////////////////////////////////////////////////////
 //*       SEA_Vec typedef, macros, and function declarations      *//
 
 #define SEA_Vec(type) __SEA_token_concat(SEA_Vec, type)
@@ -65,7 +76,7 @@ SEA_Result_declr(SEA_LinearAllocator);
         SEA_LinearAllocator* allocator; \
     } SEA_Vec(type); \
     SEA_Result_declr(SEA_Vec(type)); \
-    SEA_Result(SEA_Vec(type)) __SEA_token_concat(SEA_Vec(type), _new) (SEA_LinearAllocator* const allocator); \
+    [[nodiscard]] SEA_Result(SEA_Vec(type)) __SEA_token_concat(SEA_Vec(type), _new) (SEA_LinearAllocator* const allocator); \
     SEA_ErrRef __SEA_token_concat(SEA_Vec(type), _push_back) (SEA_Vec(type)* const SEA_vec, type elm); \
     SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _pop_back) (SEA_Vec(type)* SEA_vec); \
     SEA_Result(type) __SEA_token_concat(SEA_Vec(type), _at) (const SEA_Vec(type)* SEA_vec , size_t idx); \
@@ -74,7 +85,7 @@ SEA_Result_declr(SEA_LinearAllocator);
     type* __SEA_token_concat(SEA_Vec(type), _iter_end) (const SEA_Vec(type)* const SEA_vec); \
     type* __SEA_token_concat(SEA_Vec(type), _iter_incr) (type* iter); \
     type* __SEA_token_concat(SEA_Vec(type), _iter_decr) (type* iter); \
-    SEA_Result(SEA_VoidPtr) __SEA_token_concat(SEA_Vec(type), _extend) (SEA_Vec(type)* const dest, SEA_Vec(type)* const src); \
+    [[nodiscard]] SEA_Result(SEA_VoidPtr) __SEA_token_concat(SEA_Vec(type), _extend) (SEA_Vec(type)* const restrict dest, SEA_Vec(type)* const restrict src); \
     void __SEA_token_concat(SEA_Vec(type), _free) (SEA_Vec(type)* const SEA_vec); \
 
 #define SEA_Vec_new(type, allocator) __SEA_token_concat(SEA_Vec(type), _new)(allocator)
@@ -165,7 +176,7 @@ SEA_Result_declr(SEA_LinearAllocator);
     { \
         return --iter; \
     } \
-    SEA_Result(SEA_VoidPtr) __SEA_token_concat(SEA_Vec(type), _extend) (SEA_Vec(type)* dest, SEA_Vec(type)* src) \
+    SEA_Result(SEA_VoidPtr) __SEA_token_concat(SEA_Vec(type), _extend) (SEA_Vec(type)* restrict dest, SEA_Vec(type)* restrict src) \
     { \
         SEA_Result(SEA_VoidPtr) result = { .value = dest, .err = nullptr }; \
         if (dest->capacity < dest->len + src->len) \
@@ -194,11 +205,11 @@ SEA_Result_declr(SEA_LinearAllocator);
         SEA_vec->arr = nullptr; \
     } \
 
-//////////////////////////////////////////////////////////////////////
-//*              SEA_Error functions and macros                    *//
+/////////////////////////////////////////////////////////////////////
+//*              SEA_Error functions and macros                   *//
 
-//Creates a new SEA_Error object from a string literal passed in, along with a name for a variable that references the literal
-//This MUST BE ON ITS OWN LINE because it creates a static unsigned char array to reference the literal
+// Creates a new SEA_Error object from a string literal passed in, along with a name for a variable that references the literal
+// This MUST BE ON ITS OWN LINE because it creates a static unsigned char array to reference the literal
 #define SEA_Error_new_from_static_string_literal(error_object_name, err_code, string_literal, string_literal_reference_name) \
     static unsigned char string_literal_reference_name[sizeof(string_literal)] = string_literal; \
     SEA_Error error_object_name = { err_code, (unsigned char*)string_literal_reference_name }
@@ -217,48 +228,62 @@ SEA_Result_declr(SEA_LinearAllocator);
 
 void SEA_ErrRef_print(SEA_ErrRef err);
 
-//Checks if there was an error or not (if the error code is not 0) and returns if there the result_object if there was an error
-//Note: the result object should NOT be an rvalue
+// Checks if there was an error or not (if the error code is not 0) and returns if there the result_object if there was an error
+// Note: the result object should NOT be an rvalue
 #define SEA_try_error(result_object) if (result_object.err != NULL) return result_object;
 #define SEA_try(result_type_if_failed, result_object) result_object.value; if (result_object.err != NULL) return (SEA_Result(result_type_if_failed)) { (result_type_if_failed){ 0 }, result_object.err }
 #define SEA_try_func(value_object, result_type_if_failed, result_function) auto __SEA_macro_var(_r_) = result_function; if (__SEA_macro_var(_r_).err != NULL) return (SEA_Result(result_type_if_failed)) { (result_type_if_failed){ 0 }, __SEA_macro_var(_r_).err };  value_object = __SEA_macro_var(_r_).value
 
-//////////////////////////////////////////////////////////////////////
-//*             Wrappers for standard allocation functions        *//
+/////////////////////////////////////////////////////////////////////
+//*          Wrappers for standard allocation functions           *//
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_malloc(size_t size_of_memory_block);
+
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_realloc(SEA_VoidPtr ptr, size_t size_of_memory_block);
+
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_calloc(size_t num_of_objects, size_t size_of_one_object);
 
-//////////////////////////////////////////////////////////////////////
-//*         SEA_LinearAllocator functions and macros               *//
+/////////////////////////////////////////////////////////////////////
+//*           SEA_LinearAllocator functions and macros            *//
+
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_LinearAllocator) SEA_LinearAllocator_new(size_t size_of_memory_block);
-void SEA_LinearAllocator_free (SEA_LinearAllocator* const allocator);
+
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc(SEA_LinearAllocator* const allocator, size_t size_of_memory_block);
+
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc_resize_if_needed(SEA_LinearAllocator* const allocator, size_t size_of_memory_block);
+
+void SEA_LinearAllocator_free (SEA_LinearAllocator* const allocator);
+
 void SEA_LinearAllocator_reset(SEA_LinearAllocator* const allocator);
 
-//////////////////////////////////////////////////////////////////////
-//*         Quality of life/syntactic macros                      *//
+/////////////////////////////////////////////////////////////////////
+//*               Quality of life/syntactic macros                *//
 
 #define SEA_defer(open, close) int __SEA_macro_var(_i_) = 0; for (open; __SEA_macro_var(_i_) < 1; (__SEA_macro_var(_i_)++), close)
 
-//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 //*              SEA_lib implementation starts here               *//
 
 #ifdef SEA_LIB_IMPLEMENTATION
 
-//////////////////////////////////////////////////////////////////////
-//*              SEA_ErrRef functions and implementation           *//
+/////////////////////////////////////////////////////////////////////
+//*            SEA_ErrRef functions and implementation            *//
 
 void SEA_ErrRef_print(SEA_ErrRef err)
 {
     fprintf(stderr, "Error Code: %d, Error Message: %s", err->error_code, err->error_message);
 }
 
-//////////////////////////////////////////////////////////////////////
-//*              standard library wrappers                        *//
+/////////////////////////////////////////////////////////////////////
+//*                 standard library wrappers                     *//
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_malloc(size_t size_of_memory_block)
 {
     SEA_VoidPtr ptr = malloc(size_of_memory_block);
@@ -270,6 +295,7 @@ SEA_Result(SEA_VoidPtr) SEA_malloc(size_t size_of_memory_block)
     return result;
 }
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_realloc(SEA_VoidPtr ptr, size_t size_of_memory_block)
 {
     ptr = realloc(ptr, size_of_memory_block);
@@ -281,6 +307,7 @@ SEA_Result(SEA_VoidPtr) SEA_realloc(SEA_VoidPtr ptr, size_t size_of_memory_block
     return result;
 }
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_calloc(size_t num_of_objects, size_t size_of_one_object)
 {
     SEA_VoidPtr ptr = calloc(num_of_objects, size_of_one_object);
@@ -292,8 +319,8 @@ SEA_Result(SEA_VoidPtr) SEA_calloc(size_t num_of_objects, size_t size_of_one_obj
     return result;
 }
 
-//////////////////////////////////////////////////////////////////////
-//*         SEA_LinearAllocator implementation starts here              *//
+/////////////////////////////////////////////////////////////////////
+//*         SEA_LinearAllocator implementation starts here        *//
 
 [[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_LinearAllocator) SEA_LinearAllocator_new(size_t size_of_memory_block)
@@ -322,6 +349,7 @@ void SEA_LinearAllocator_free (SEA_LinearAllocator* const allocator)
     allocator->capacity = 0;
 }
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc(SEA_LinearAllocator* const allocator, size_t size_of_memory_block)
 {
     SEA_Result(SEA_VoidPtr) result = { .value = NULL, .err = 0 };
@@ -342,6 +370,7 @@ SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc(SEA_LinearAllocator* const all
     return result;
 }
 
+[[nodiscard("Pointer to heap allocation must be used")]]
 SEA_Result(SEA_VoidPtr) SEA_LinearAllocator_alloc_resize_if_needed(SEA_LinearAllocator* const allocator, size_t size_of_memory_block)
 {
     SEA_Result(SEA_VoidPtr) result = { .value = NULL, .err = NULL };
