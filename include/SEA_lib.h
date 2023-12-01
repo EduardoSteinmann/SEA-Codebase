@@ -7,8 +7,8 @@
 
 /////////////////////////////////////////////////////////////////////
 //*                 SEA Internal Macros and Functions             *//
-#define __SEA_token_concat_direct(t1, t2) t1 ## t2
-#define __SEA_token_concat(t1, t2) __SEA_token_concat_direct(t1, t2)
+#define __SEA_token_concat_direct(t1, ...) t1 ## __VA_ARGS__
+#define __SEA_token_concat(t1, ...) __SEA_token_concat_direct(t1, __VA_ARGS__)
 #define __SEA_macro_var(name) __SEA_token_concat(name, __LINE__)
 
 /////////////////////////////////////////////////////////////////////
@@ -27,11 +27,7 @@ typedef struct SEA_LinearAllocator
     unsigned char* memory;
 } SEA_LinearAllocator;
 
-typedef struct SEA_Error
-{
-    int error_code;
-    const unsigned char* error_message;
-} SEA_Error;
+typedef const char* SEA_Error;
 
 typedef const SEA_Error* SEA_ErrRef;
 

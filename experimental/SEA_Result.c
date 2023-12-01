@@ -2,6 +2,10 @@
 #include <stdbool.h>
 #include "../include/SEA_lib.h"
 
+#define SEA_eval(x, ...) x
+
+#define SEA_Str_Enum(...) 
+
 enum SEA_Err {
     Ok,
     NoValueError,
