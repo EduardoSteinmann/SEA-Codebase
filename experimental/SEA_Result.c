@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "include/SEA_lib.h"
+#include "../include/SEA_lib.h"
 
 enum SEA_Err {
     Ok,
