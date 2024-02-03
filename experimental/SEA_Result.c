@@ -24,8 +24,9 @@ static const char *const SEA_ERROR_MESSAGES[] = {
     "Malloc Error",
 };
 
-#define _SEA_Result_declr(type) \
-    typedef struct __SEA_token_concat(SEA_Result_, type) { \
+#define SEA_Result_declr(type) \
+    typedef struct \
+    { \
         union \
         { \
             type Ok; \
@@ -34,25 +35,87 @@ static const char *const SEA_ERROR_MESSAGES[] = {
         bool isErr; \
     } __SEA_token_concat(SEA_Result_, type);
 
-#define _SEA_Result(type) __SEA_token_concat(SEA_Result_, type)
-#define _SEA_Result_perror(res) if (res.isErr) puts(SEA_ERROR_MESSAGES[res.Err])
-#define _SEA_Result_failed_unwrap(res) *(typeof(res.Ok)*)0
-#define _SEA_Result_unwrap_or(res, default) (res.isErr ? default : res.Ok)
-#define _SEA_Result_unwrap(res) (res.isErr ? _SEA_Result_failed_unwrap(res) : res.Ok)
+#define SEA_Result_impl(type) \
+    SEA_Result(type) __SEA_token_concat(SEA_Result_from_, type)(type from) \
+    { \
+        return (SEA_Result(type)) { .Ok = from, .isErr = false }; \
+    } \
+    type __SEA_token_concat(SEA_Result_unwrap_, type)(SEA_Result(type) from) \
+    { \
+        if (!from.isErr) return from.Ok; \
+        __builtin_trap(); \
+    } \
+    type __SEA_token_concat(SEA_Result_unwrap_or_, type)(SEA_Result(type) from, type fallback) \
+    { \
+        return from.isErr ? fallback : from.Ok; \
+    } \
+    SEA_Result(type) __SEA_token_concat(SEA_Result_from_err_, type)(enum SEA_Err err) \
+    { \
+        return (SEA_Result(type)) { .Err = err, .isErr = true }; \
+    }
 
-_SEA_Result_declr(float)
+#define SEA_Result(type)            __SEA_token_concat(SEA_Result_, type)
+#define SEA_Result_from(type)       __SEA_token_concat(SEA_Result_from_, type)
+#define SEA_Result_from_err(type)   __SEA_token_concat(SEA_Result_from_err_, type)
+#define SEA_Result_unwrap(type)     __SEA_token_concat(SEA_Result_unwrap_, type)
+#define SEA_Result_unwrap_or(type)  __SEA_token_concat(SEA_Result_unwrap_or_, type)
 
-_SEA_Result(float) retErrResult(bool shouldRetErr)
+#define SEA_PtrResult_declr(ptr_type) \
+    typedef struct \
+    { \
+        union \
+        { \
+            ptr_type *Ok; \
+            enum SEA_Err Err; \
+        }; \
+        bool isErr; \
+    } __SEA_token_concat(SEA_PtrResult_, ptr_type);
+
+#define SEA_PtrResult_impl(ptr_type) \
+    SEA_PtrResult(ptr_type) __SEA_token_concat(SEA_PtrResult_from_, ptr_type)(ptr_type from) \
+    { \
+        return (SEA_PtrResult(ptr_type)) { .Ok = from, .isErr = false }; \
+    } \
+    ptr_type *__SEA_token_concat(SEA_PtrResult_unwrap_, ptr_type)(SEA_PtrResult(ptr_type) from) \
+    { \
+        if (!from.isErr) return from.Ok; \
+        __builtin_trap(); \
+    } \
+    ptr_type *__SEA_token_concat(SEA_PtrResult_unwrap_or_, ptr_type)(SEA_PtrResult(ptr_type) from, ptr_type *fallback) \
+    { \
+        return from.isErr ? fallback : from.Ok; \
+    } \
+    SEA_PtrResult(ptr_type) __SEA_token_concat(SEA_PtrResult_from_err_, ptr_type)(enum SEA_Err err) \
+    { \
+        return (SEA_PtrResult(ptr_type)) { .Err = err, .isErr = true }; \
+    } \
+
+#define SEA_PtrResult(type)            __SEA_token_concat(SEA_PtrResult_, type)
+#define SEA_PtrResult_from(type)       __SEA_token_concat(SEA_PtrResult_from_, type)
+#define SEA_PtrResult_from_err(type)   __SEA_token_concat(SEA_PtrResult_from_err_, type)
+#define SEA_PtrResult_unwrap(type)     __SEA_token_concat(SEA_PtrResult_unwrap_, type)
+#define SEA_PtrResult_unwrap_or(type)  __SEA_token_concat(SEA_PtrResult_unwrap_or_, type)
+
+#define _SEA_Result_unwrap_unchecked(res) (res.Ok)
+#define _SEA_Result_unwrap_or(res, fallback) (res.isErr ? fallback : res.Ok)
+#define _breakcase break; case
+#define _if_Ok _breakcase NoErr
+
+#define _SEA_Result_rvalue_match(res, name) \
+    for (auto name = res, __SEA_macro_var(__run_once__) = (typeof(name)) { Err, true }; __SEA_macro_var(__run_once__).isErr; __SEA_macro_var(__run_once__).isErr = false) \
+        switch (name.Err)
+
+#define SEA_Result_match(res) switch (res.Err)
+
+#define Statement(statement) do { statement ;} while(false)
+
+SEA_Result_declr(int)
+SEA_Result_impl(int)
+
+
+int main(int argc, char *argv[])
 {
-    return shouldRetErr ? (_SEA_Result(float)) { .Err = NoValueError, .isErr = true } : (_SEA_Result(float)) { 3.0f };
-}
+    SEA_Result(int) result = SEA_Result_from(int)(2);
 
-int main()
-{
-    _SEA_Result(float) res = retErrResult(true);
-    _SEA_Result_perror(res);
-
-    int x = _SEA_Result_unwrap_or(res, 2);
-
-    printf("%d", x);
+    printf("Result of result: %d", SEA_Result_unwrap_or(int)(result, 3));
 }
