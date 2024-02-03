@@ -4,7 +4,7 @@
 
 #define SEA_eval(x, ...) x
 
-#define SEA_Str_Enum(...) 
+#define SEA_Str_Enum(...)
 
 enum SEA_Err {
     Ok,
@@ -99,19 +99,16 @@ static const char *const SEA_ERROR_MESSAGES[] = {
 #define _SEA_Result_unwrap_unchecked(res) (res.Ok)
 #define _SEA_Result_unwrap_or(res, fallback) (res.isErr ? fallback : res.Ok)
 #define _breakcase break; case
-#define _if_Ok _breakcase NoErr
 
+// maybe remove
 #define _SEA_Result_rvalue_match(res, name) \
     for (auto name = res, __SEA_macro_var(__run_once__) = (typeof(name)) { Err, true }; __SEA_macro_var(__run_once__).isErr; __SEA_macro_var(__run_once__).isErr = false) \
         switch (name.Err)
 
 #define SEA_Result_match(res) switch (res.Err)
 
-#define Statement(statement) do { statement ;} while(false)
-
 SEA_Result_declr(int)
 SEA_Result_impl(int)
-
 
 int main(int argc, char *argv[])
 {
